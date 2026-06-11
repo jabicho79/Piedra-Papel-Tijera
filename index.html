@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Un juego premium e interactivo de Piedra, Papel o Tijera jugable localmente o en multijugador online P2P.">
+  <title>Piedra, Papel o Tijera — Duelo Multijugador</title>
+  
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- PeerJS Library for WebRTC P2P communication -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+  <!-- Reusable SVG Icons Library -->
+  <svg style="display: none;">
+    <!-- Rock Icon -->
+    <symbol id="icon-rock" viewBox="0 0 24 24">
+      <path d="M12 2L3.5 7v10L12 22l8.5-5V7L12 2zm6.5 14.25L12 19.9l-6.5-3.65v-8.5L12 4.1l6.5 3.65v8.5z" />
+      <path d="M12 7.5l-4.5 2.5v4l4.5 2.5 4.5-2.5v-4L12 7.5z" opacity="0.6"/>
+    </symbol>
+    
+    <!-- Paper Icon -->
+    <symbol id="icon-paper" viewBox="0 0 24 24">
+      <path d="M12 2c-.83 0-1.5.67-1.5 1.5v7.2l-1.3-.9c-.6-.4-1.4-.3-1.9.2s-.5 1.3 0 1.8l3.9 3.9c.7.7 1.6 1.1 2.6 1.1h3.7c1.9 0 3.5-1.6 3.5-3.5v-6.3c0-.8-.7-1.5-1.5-1.5s-1.5.7-1.5 1.5V10h-.5V5.5c0-.8-.7-1.5-1.5-1.5s-1.5.7-1.5 1.5V10h-.5V4.5c0-.8-.7-1.5-1.5-1.5S12 3.7 12 4.5V10h-.5V3.5c0-.8-.7-1.5-1.5-1.5z"/>
+    </symbol>
+    
+    <!-- Scissors Icon -->
+    <symbol id="icon-scissors" viewBox="0 0 24 24">
+      <path d="M19 3c-1.5 0-2.8.9-3.4 2.2l-3.6 3.6-3.6-3.6C7.8 3.9 6.5 3 5 3a4 4 0 00-4 4 4 4 0 006.5 3.1l2.5 2.5-2.5 2.5A4 4 0 001 17a4 4 0 004 4c1.5 0 2.8-.9 3.4-2.2l3.6-3.6 3.6 3.6c.6 1.3 1.9 2.2 3.4 2.2a4 4 0 004-4 4 4 0 00-6.5-3.1L14 12l2.5-2.5A4 4 0 0023 7a4 4 0 00-4-4zM5 9a2 2 0 110-4 2 2 0 010 4zm14 10a2 2 0 110-4 2 2 0 010 4z"/>
+    </symbol>
+    
+    <!-- Copy Icon -->
+    <symbol id="icon-copy" viewBox="0 0 24 24">
+      <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+    </symbol>
+  </svg>
+
+  <!-- Canvas for particle explosions and winning confetti -->
+  <canvas id="effect-canvas"></canvas>
+
+  <!-- Global Header -->
+  <header>
+    <div class="logo-area">
+      <span class="logo-icon">✨</span>
+      <h1 class="logo-text">Piedra Papel Tijera</h1>
+    </div>
+    
+    <div class="header-controls">
+      <span id="connection-status-toast" class="connection-toast hidden">Intentando conectar...</span>
+      <button id="toggle-sound-btn" class="btn-icon-only" aria-label="Activar/Desactivar Sonido" title="Sonido">
+        🔊
+      </button>
+      <button id="help-btn" class="btn-icon-only" aria-label="Instrucciones del juego" title="Ayuda">
+        ❓
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main>
+    
+    <!-- 1. Game Setup Panel -->
+    <section id="setup-panel" class="glass-panel setup-screen">
+      <div>
+        <h2 class="setup-title">Configuración de Partida</h2>
+        <p class="setup-subtitle">Personaliza tu duelo de campeones</p>
+      </div>
+
+      <!-- Mode Tabs Navigation -->
+      <nav class="tabs-container" aria-label="Modos de juego">
+        <button class="tab-btn active" data-tab="local">Duelo Local</button>
+        <button class="tab-btn" data-tab="cpu">Contra CPU</button>
+        <button class="tab-btn" data-tab="online">Partida Online</button>
+      </nav>
+
+      <div class="setup-layout-grid">
+        <!-- Player Configuration Area -->
+        <div id="players-config-container" class="players-config">
+          <!-- Player 1 Config (My Config) -->
+          <div id="p1-card-config" class="player-card-config active-p1">
+            <div id="p1-config-header-label" class="player-label p1">
+              <span>🎮</span> Jugador 1
+            </div>
+            
+            <div class="input-group">
+              <label for="p1-name-input">Nombre:</label>
+              <input type="text" id="p1-name-input" class="text-input" value="Jugador 1" placeholder="Ingresa nombre" maxlength="12">
+            </div>
+            
+            <div class="input-group">
+              <label>Elige tu Avatar:</label>
+              <div id="p1-avatar-container" class="avatar-selector">
+                <button class="avatar-btn selected" data-avatar="🦊">🦊</button>
+                <button class="avatar-btn" data-avatar="🐯">🐯</button>
+                <button class="avatar-btn" data-avatar="🥷">🥷</button>
+                <button class="avatar-btn" data-avatar="👾">👾</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Player 2 Config (Local/CPU) -->
+          <div id="p2-card-config" class="player-card-config active-p2">
+            <div class="player-label p2">
+              <span>🎮</span> Jugador 2
+            </div>
+            
+            <div class="input-group">
+              <label for="p2-name-input">Nombre:</label>
+              <input type="text" id="p2-name-input" class="text-input" value="Jugador 2" placeholder="Ingresa nombre" maxlength="12">
+            </div>
+            
+            <div class="input-group">
+              <label>Elige tu Avatar:</label>
+              <div id="p2-avatar-container" class="avatar-selector">
+                <button class="avatar-btn selected" data-avatar="🦁">🦁</button>
+                <button class="avatar-btn" data-avatar="🦄">🦄</button>
+                <button class="avatar-btn" data-avatar="🤖">🤖</button>
+                <button class="avatar-btn" data-avatar="👽">👽</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Online P2P Connection Lobby (Hidden initially) -->
+        <div id="online-lobby-container" class="online-lobby-panel hidden">
+          
+          <!-- State 1: Choose host or join -->
+          <div id="lobby-selection-view" class="lobby-subview">
+            <h3 class="lobby-subtitle">Multijugador Sin Servidor (P2P)</h3>
+            <p class="lobby-desc">Juega con un amigo desde dos pantallas diferentes compartiendo un código de sala.</p>
+            <div class="lobby-action-row">
+              <button id="lobby-create-room-btn" class="btn-primary">Crear Sala</button>
+              <span class="lobby-or">o</span>
+              <button id="lobby-join-view-btn" class="btn-secondary" style="padding: 1.2rem 2rem; border-radius: var(--border-radius-md); font-weight: 800;">Unirse a Sala</button>
+            </div>
+          </div>
+
+          <!-- State 2: Host waiting lobby -->
+          <div id="lobby-host-view" class="lobby-subview hidden">
+            <h3 class="lobby-subtitle">Sala Creada</h3>
+            <p class="lobby-desc">Comparte este código o enlace con tu rival:</p>
+            
+            <div class="room-code-box">
+              <span id="room-code-display" class="room-code-text">Cargando...</span>
+              <button id="copy-code-btn" class="btn-icon-only" aria-label="Copiar código" title="Copiar código">
+                <svg style="width: 20px; height: 20px; fill: currentColor;"><use href="#icon-copy"></use></svg>
+              </button>
+            </div>
+
+            <div class="lobby-action-row" style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+              <button id="copy-invite-link-btn" class="btn-secondary">🔗 Copiar Enlace Directo</button>
+            </div>
+
+            <div class="lobby-waiting-status">
+              <div class="spinner"></div>
+              <span>Esperando que el rival se conecte...</span>
+            </div>
+
+            <button id="cancel-host-btn" class="btn-secondary" style="margin-top: 1rem;">Cancelar</button>
+          </div>
+
+          <!-- State 3: Join room form -->
+          <div id="lobby-join-view" class="lobby-subview hidden">
+            <h3 class="lobby-subtitle">Unirse a Sala</h3>
+            <p class="lobby-desc">Introduce el código de sala compartido por tu rival:</p>
+            
+            <div class="input-group" style="margin-bottom: 1.5rem; max-width: 350px; width: 100%;">
+              <input type="text" id="join-room-input" class="text-input" placeholder="Ej: 7b0f" style="text-align: center; font-size: 1.3rem; letter-spacing: 2px; font-family: monospace;" maxlength="10">
+            </div>
+
+            <div class="lobby-action-row">
+              <button id="connect-room-btn" class="btn-primary" style="padding: 1rem 2rem;">Conectarse</button>
+              <button id="cancel-join-btn" class="btn-secondary">Volver</button>
+            </div>
+          </div>
+
+          <!-- State 4: Connection loader -->
+          <div id="lobby-loading-view" class="lobby-subview hidden">
+            <h3 class="lobby-subtitle" id="lobby-loading-title">Conectando...</h3>
+            <div class="spinner" style="margin: 2rem 0;"></div>
+            <p class="lobby-desc" id="lobby-loading-desc">Estableciendo conexión P2P en la red...</p>
+            <button id="cancel-loading-btn" class="btn-secondary" style="margin-top: 1rem;">Cancelar</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Match Rules Settings (Local & CPU only, Host controls Online points) -->
+      <div id="match-rules-settings" class="match-settings">
+        <div id="game-mode-row" class="settings-row">
+          <!-- Game Mode selector is now represented by Tabs, kept as hidden input fallback or simple logic -->
+        </div>
+        
+        <div class="settings-row">
+          <div class="settings-label">
+            <span>Límite de Puntos</span>
+            <span>Gana el primero que llegue a la meta</span>
+          </div>
+          <div id="target-score-selector" class="options-selector">
+            <button class="selector-option" data-value="1">1 pt</button>
+            <button class="selector-option selected" data-value="3">3 pts</button>
+            <button class="selector-option" data-value="5">5 pts</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Play Button (Only shown in Local/CPU tabs) -->
+      <button id="start-game-btn" class="btn-primary">Comenzar Duelo</button>
+    </section>
+
+    <!-- 2. Play Arena Panel -->
+    <section id="arena-panel" class="glass-panel arena-screen">
+      
+      <!-- Arena Top Header Scoreboard -->
+      <div class="arena-header">
+        <div class="score-board">
+          <div class="player-score-card">
+            <span id="p1-display-avatar" class="p-score-avatar">🦊</span>
+            <span id="p1-display-name" class="p-score-name p1">Jugador 1</span>
+            <span id="p1-score" class="score-number">0</span>
+            <span id="p1-status-badge" class="player-status-badge hidden">Listo</span>
+          </div>
+          
+          <span class="score-colon">:</span>
+          
+          <div class="player-score-card">
+            <span id="p2-display-avatar" class="p-score-avatar">🦁</span>
+            <span id="p2-display-name" class="p-score-name p2">Jugador 2</span>
+            <span id="p2-score" class="score-number">0</span>
+            <span id="p2-status-badge" class="player-status-badge hidden">Listo</span>
+          </div>
+        </div>
+        
+        <div class="round-info">
+          <div id="round-title" class="round-count">Ronda 1</div>
+          <div id="target-title" class="round-target">Al mejor de 3</div>
+        </div>
+      </div>
+
+      <!-- Play Interactive Area -->
+      <div class="play-workspace">
+        
+        <!-- Selection turn view -->
+        <div id="choice-picker" class="choice-picker-area">
+          <h3 id="turn-title" class="turn-banner p1">Turno de Jugador 1</h3>
+          
+          <div class="choices-grid">
+            <!-- Rock -->
+            <button class="choice-card" data-choice="rock" aria-label="Seleccionar Piedra">
+              <svg class="choice-icon-svg"><use href="#icon-rock"></use></svg>
+              <span class="choice-name">Piedra</span>
+            </button>
+            
+            <!-- Paper -->
+            <button class="choice-card" data-choice="paper" aria-label="Seleccionar Papel">
+              <svg class="choice-icon-svg"><use href="#icon-paper"></use></svg>
+              <span class="choice-name">Papel</span>
+            </button>
+            
+            <!-- Scissors -->
+            <button class="choice-card" data-choice="scissors" aria-label="Seleccionar Tijera">
+              <svg class="choice-icon-svg"><use href="#icon-scissors"></use></svg>
+              <span class="choice-name">Tijera</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Online selection locked overlay -->
+        <div id="online-wait-overlay" class="pass-overlay">
+          <span class="pass-avatar">⏳</span>
+          <h3 class="pass-message">¡Elección guardada!<br><span style="font-size: 1.1rem; color: var(--text-muted);">Esperando que <span id="online-wait-opponent-name">el rival</span> elija...</span></h3>
+          <div class="spinner" style="margin-top: 1rem;"></div>
+        </div>
+
+        <!-- Hidden pass screen (Local Pass & Play only) -->
+        <div id="pass-screen" class="pass-overlay">
+          <span id="pass-screen-avatar" class="pass-avatar">🦁</span>
+          <h3 class="pass-message">¡Elección guardada!<br>Pasa el dispositivo a <span id="pass-screen-player-name">Jugador 2</span></h3>
+          <button id="pass-confirm-btn" class="btn-primary">¡Listo, es mi turno!</button>
+        </div>
+
+        <!-- Countdown loader -->
+        <div id="countdown-screen" class="countdown-area">
+          <span id="countdown-number" class="countdown-number">3</span>
+          <span class="countdown-subtitle">¿Quién ganará?</span>
+        </div>
+
+        <!-- Reveal arena results -->
+        <div id="reveal-screen" class="reveal-area">
+          <div class="reveal-cards-container">
+            <!-- Player 1 Choice Card -->
+            <div id="reveal-p1-card" class="reveal-card p1-card">
+              <span id="reveal-p1-avatar" style="font-size: 2rem;">🦊</span>
+              <svg id="reveal-p1-svg" class="choice-icon-svg"><use href="#icon-rock"></use></svg>
+              <span id="reveal-p1-choice-name" class="choice-name">Piedra</span>
+              <span id="reveal-p1-label-name" class="card-owner">Jugador 1</span>
+            </div>
+
+            <div class="reveal-vs">VS</div>
+
+            <!-- Player 2 Choice Card -->
+            <div id="reveal-p2-card" class="reveal-card p2-card">
+              <span id="reveal-p2-avatar" style="font-size: 2rem;">🦁</span>
+              <svg id="reveal-p2-svg" class="choice-icon-svg"><use href="#icon-paper"></use></svg>
+              <span id="reveal-p2-choice-name" class="choice-name">Papel</span>
+              <span id="reveal-p2-label-name" class="card-owner">Jugador 2</span>
+            </div>
+          </div>
+
+          <h3 id="result-banner" class="result-banner draw">¡Empate!</h3>
+
+          <div class="action-bar">
+            <!-- Next round buttons. Guest will see a helper label while host has control -->
+            <button id="next-round-btn" class="btn-primary">Siguiente Ronda</button>
+            <span id="guest-wait-next-round-label" class="connection-toast hidden">Esperando que el anfitrión continúe...</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action bar to exit active arena -->
+      <div style="display: flex; justify-content: flex-start;">
+        <button id="exit-arena-btn" class="btn-secondary">⚙️ Volver a Ajustes</button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Help & Rules Dialog (Modal) -->
+  <dialog id="help-dialog" aria-labelledby="help-dialog-title">
+    <div class="dialog-header">
+      <h3 id="help-dialog-title" class="dialog-title">Reglas del Duelo</h3>
+      <button class="dialog-close" data-close="help-dialog" aria-label="Cerrar modal">&times;</button>
+    </div>
+    
+    <div class="dialog-body">
+      <p>El juego es muy sencillo. Consiste en vencer la elección del rival según las siguientes reglas:</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; background: oklch(100% 0 0 / 0.04); padding: 1rem; border-radius: var(--border-radius-sm); border: 1px solid var(--glass-border);">
+        <p>🪨 <strong>Piedra</strong> aplasta a las Tijeras.</p>
+        <p>📄 <strong>Papel</strong> envuelve a la Piedra.</p>
+        <p>✂️ <strong>Tijeras</strong> cortan al Papel.</p>
+      </div>
+
+      <p><strong>Modos de Juego:</strong></p>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+        <p>👨‍👦 <strong>Duelo Local:</strong> Jugad turnos alternos en la misma pantalla. Una pantalla de bloqueo mantendrá las elecciones en secreto.</p>
+        <p>🤖 <strong>Contra CPU:</strong> Entrena jugando contra la inteligencia artificial.</p>
+        <p>🌐 <strong>Partida Online:</strong> Crea o únete a una sala mediante código. Cada jugador elige simultáneamente desde su dispositivo sin revelar su opción.</p>
+      </div>
+      
+      <button class="btn-primary" data-close="help-dialog" style="padding: 0.75rem 1.5rem; font-size: 1rem; margin-top: 0.5rem;">Entendido</button>
+    </div>
+  </dialog>
+
+  <!-- Match Winner / Victory Dialog (Modal) -->
+  <dialog id="victory-dialog" aria-labelledby="victory-dialog-title">
+    <div class="win-dialog-body">
+      <span id="victory-emoji" class="win-emoji">🏆</span>
+      <h2 id="victory-dialog-title" class="win-title">¡Victoria!</h2>
+      <p id="victory-subtitle" class="win-subtitle">Jugador 1 ha ganado la partida.</p>
+      
+      <div class="action-bar" style="margin-top: 1rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; width: 100%;">
+        <div id="host-victory-actions" class="action-bar" style="width: 100%;">
+          <button id="rematch-btn" class="btn-primary" style="flex: 1;">Nueva Partida</button>
+          <button id="config-btn" class="btn-secondary" data-close="victory-dialog" style="flex: 1;">Ajustes</button>
+        </div>
+        <div id="guest-victory-actions" class="hidden" style="color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">
+          Esperando que el anfitrión reinicie la partida...
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <footer>
+    <p>Hecho con ❤️ para un duelo justo y emocionante</p>
+  </footer>
+
+  <!-- App Script Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

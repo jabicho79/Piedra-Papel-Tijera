@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker build *)",
+      "Bash(cat ~/.docker/config.json)",
+      "Read(//Users/javiermosquerasanchez/.docker/**)",
+      "Bash(cp config.json config.json.backup)",
+      "Bash(jq 'del\\(.credsStore\\)' config.json)",
+      "Bash(mv config.json.tmp config.json)",
+      "Bash(az webapp *)",
+      "Bash(az appservice *)",
+      "Bash(docker push *)",
+      "Bash(curl -I https://piedras-dec6h7ggbufbe9an.spaincentral-01.azurewebsites.net)",
+      "Bash(unzip -l /tmp/piedras_logs.zip)",
+      "Bash(unzip -p /tmp/piedras_logs.zip \"LogFiles/2026_06_11_lw0sdlwk00031E_docker.log\")",
+      "Bash(curl -s https://registry.hub.docker.com/v1/repositories/jabicho/piedra-papel-tijera/tags)",
+      "Bash(docker pull *)",
+      "Bash(curl -s https://piedras-dec6h7ggbufbe9an.spaincentral-01.azurewebsites.net)",
+      "Bash(git init *)",
+      "Bash(git config *)"
+    ]
+  }
+}
