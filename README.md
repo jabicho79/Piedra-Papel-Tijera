@@ -2,7 +2,7 @@
 
 A premium, interactive Rock-Paper-Scissors game with P2P multiplayer support using WebRTC technology.
 
-## 🎯 Purpose
+## Purpose
 
 **Piedra, Papel o Tijera** is a full-featured web application that brings the classic Rock-Paper-Scissors game to the digital age. The app supports both **local single-player mode** (against the computer) and **online P2P multiplayer mode** where players can challenge each other in real-time without requiring a central server.
 
@@ -14,7 +14,7 @@ The game features:
 - **Fully Containerized**: Docker support for easy deployment and scaling
 - **Cloud Ready**: Pre-configured for Azure App Service deployment
 
-## 🏗️ Architecture & Components
+## Architecture & Components
 
 ### Frontend Components
 
@@ -58,7 +58,7 @@ The main JavaScript module containing:
 - **`.dockerignore`**: Excludes unnecessary files from Docker build context
 - **`.claude/settings.local.json`**: Claude Code IDE settings
 
-## 🔄 Component Interaction Flow
+## Component Interaction Flow
 
 ```
 User Interaction (Click/Tap)
@@ -87,7 +87,7 @@ UI updates with result and score
 5. **State Sync**: Both clients display identical game state
 6. **Feedback**: Sound and visual effects trigger on both devices
 
-## 🚀 Running Locally
+## Running Locally
 
 ### Prerequisites
 - Node.js/npm (optional, only if not using Docker)
@@ -138,7 +138,7 @@ docker run -d -p 8080:80 piedra-papel-tijera
 # http://localhost:8080
 ```
 
-## 🎮 Usage
+## Usage
 
 ### Single Player Mode
 1. Open the application in your browser
@@ -153,7 +153,7 @@ docker run -d -p 8080:80 piedra-papel-tijera
 4. Both players see the same game board
 5. Make simultaneous moves and watch the result sync in real-time
 
-## 🐳 Deployment
+## Deployment
 
 ### Azure App Service
 The application is pre-configured for Azure deployment:
@@ -169,7 +169,7 @@ docker pull jabicho/piedra-papel-tijera:latest
 docker run -p 80:80 jabicho/piedra-papel-tijera:latest
 ```
 
-## 📋 Technology Stack
+## Technology Stack
 
 | Technology | Purpose |
 |-----------|---------|
@@ -183,29 +183,29 @@ docker run -p 80:80 jabicho/piedra-papel-tijera:latest
 | Nginx | HTTP server for static content |
 | Azure App Service | Cloud hosting |
 
-## 🔊 Features
+## Features
 
-- ✨ **Premium UI**: Modern, responsive design with smooth animations
-- 🎵 **Dynamic Audio**: Custom sound effects using Web Audio API synthesis
-- 🎆 **Visual Effects**: Particle explosions and confetti on victories
-- 👥 **P2P Multiplayer**: Real-time gaming without a central server
-- 🌐 **Cross-Browser**: Works on all modern browsers with WebRTC support
-- 📱 **Mobile Friendly**: Responsive design for phones and tablets
-- 🚀 **Fast Performance**: Optimized for instant feedback and low latency
-- 🐳 **Containerized**: Easy deployment with Docker
+- **Premium UI**: Modern, responsive design with smooth animations
+- **Dynamic Audio**: Custom sound effects using Web Audio API synthesis
+- **Visual Effects**: Particle explosions and confetti on victories
+- **P2P Multiplayer**: Real-time gaming without a central server
+- **Cross-Browser**: Works on all modern browsers with WebRTC support
+- **Mobile Friendly**: Responsive design for phones and tablets
+- **Fast Performance**: Optimized for instant feedback and low latency
+- **Containerized**: Easy deployment with Docker
 
-## 📝 License
+## License
 
 This project is open source and available under the MIT License.
 
-## 👨‍💻 Author
+## Author
 
 Created by Javier Mosquera (jabicho)
 
-## 🤝 Contributing
+## Contributing
 
 Feel free to fork this repository and submit pull requests for any improvements!
 
 ---
 
-**Enjoy playing Piedra, Papel o Tijera! 🎮**
+**Enjoy playing Piedra, Papel o Tijera!**
