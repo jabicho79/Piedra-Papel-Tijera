@@ -155,19 +155,220 @@ docker run -d -p 8080:80 piedra-papel-tijera
 
 ## Deployment
 
-### Azure App Service
-The application is pre-configured for Azure deployment:
+### Docker Hub
+
+The Docker image is hosted on Docker Hub and supports multiple platforms:
 
 ```bash
-# Already deployed at:
-# https://piedras-dec6h7ggbufbe9an.spaincentral-01.azurewebsites.net
-```
-
-The Docker image is hosted on Docker Hub:
-```bash
+# Pull the image
 docker pull jabicho/piedra-papel-tijera:latest
-docker run -p 80:80 jabicho/piedra-papel-tijera:latest
+
+# Run locally
+docker run -d -p 80:80 jabicho/piedra-papel-tijera:latest
 ```
+
+### Azure App Service
+
+Deploy the application to Azure App Service using Docker containers.
+
+#### Prerequisites
+
+- Azure CLI installed and configured
+- Docker Hub account with the image pushed
+- Active Azure subscription
+- App Service Plan created (or create during deployment)
+
+#### Setup Environment Variables
+
+Before deploying, set up these environment variables with your values:
+
+```bash
+# Azure subscription and resource details
+export AZURE_SUBSCRIPTION_ID="your-subscription-id"
+export AZURE_RESOURCE_GROUP="your-resource-group-name"
+export AZURE_REGION="eastus"  # e.g., eastus, westeurope, uksouth
+
+# App Service details
+export APP_SERVICE_NAME="your-app-service-name"
+export APP_SERVICE_PLAN="your-app-service-plan-name"
+export SKU="B1"  # Free, B1 (Basic), S1 (Standard), etc.
+
+# Docker image details
+export DOCKER_REGISTRY="docker.io"
+export DOCKER_USERNAME="your-docker-username"
+export DOCKER_IMAGE="your-docker-username/piedra-papel-tijera:latest"
+```
+
+#### Step 1: Login to Azure
+
+```bash
+az login
+az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+```
+
+#### Step 2: Create Resource Group (if not exists)
+
+```bash
+az group create \
+  --name "$AZURE_RESOURCE_GROUP" \
+  --location "$AZURE_REGION"
+```
+
+#### Step 3: Create App Service Plan (if not exists)
+
+```bash
+az appservice plan create \
+  --name "$APP_SERVICE_PLAN" \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --sku "$SKU" \
+  --is-linux
+```
+
+#### Step 4: Create Web App with Docker Container
+
+```bash
+az webapp create \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --plan "$APP_SERVICE_PLAN" \
+  --name "$APP_SERVICE_NAME" \
+  --deployment-container-image-name "$DOCKER_IMAGE"
+```
+
+#### Step 5: Configure Container Settings
+
+```bash
+az webapp config container set \
+  --name "$APP_SERVICE_NAME" \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --docker-custom-image-name "$DOCKER_IMAGE" \
+  --docker-registry-server-url "https://$DOCKER_REGISTRY"
+```
+
+#### Step 6: Enable HTTPS
+
+```bash
+az webapp update \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --name "$APP_SERVICE_NAME" \
+  --https-only
+```
+
+#### Step 7: Verify Deployment
+
+```bash
+# Get the URL
+APP_URL=$(az webapp show \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --name "$APP_SERVICE_NAME" \
+  --query defaultHostName \
+  --output tsv)
+
+echo "Your app is deployed at: https://$APP_URL"
+
+# Test the deployment
+curl -I "https://$APP_URL"
+```
+
+#### Step 8: View Logs (Optional)
+
+```bash
+az webapp log tail \
+  --name "$APP_SERVICE_NAME" \
+  --resource-group "$AZURE_RESOURCE_GROUP"
+```
+
+#### Complete Deployment Script
+
+For convenience, here's a complete bash script that runs all steps:
+
+```bash
+#!/bin/bash
+set -e
+
+# Configuration
+AZURE_SUBSCRIPTION_ID="your-subscription-id"
+AZURE_RESOURCE_GROUP="your-resource-group-name"
+AZURE_REGION="eastus"
+APP_SERVICE_NAME="your-app-service-name"
+APP_SERVICE_PLAN="your-app-service-plan-name"
+SKU="B1"
+DOCKER_IMAGE="your-docker-username/piedra-papel-tijera:latest"
+
+# Login and set subscription
+echo "Logging in to Azure..."
+az login
+az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+
+# Create resource group
+echo "Creating resource group..."
+az group create \
+  --name "$AZURE_RESOURCE_GROUP" \
+  --location "$AZURE_REGION"
+
+# Create App Service Plan
+echo "Creating App Service Plan..."
+az appservice plan create \
+  --name "$APP_SERVICE_PLAN" \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --sku "$SKU" \
+  --is-linux
+
+# Create Web App
+echo "Creating Web App..."
+az webapp create \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --plan "$APP_SERVICE_PLAN" \
+  --name "$APP_SERVICE_NAME" \
+  --deployment-container-image-name "$DOCKER_IMAGE"
+
+# Configure Container
+echo "Configuring container settings..."
+az webapp config container set \
+  --name "$APP_SERVICE_NAME" \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --docker-custom-image-name "$DOCKER_IMAGE" \
+  --docker-registry-server-url "https://docker.io"
+
+# Enable HTTPS
+echo "Enabling HTTPS..."
+az webapp update \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --name "$APP_SERVICE_NAME" \
+  --https-only
+
+# Get and display URL
+APP_URL=$(az webapp show \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --name "$APP_SERVICE_NAME" \
+  --query defaultHostName \
+  --output tsv)
+
+echo "Deployment complete!"
+echo "App URL: https://$APP_URL"
+```
+
+Save this script as `deploy-to-azure.sh`, update the environment variables, and run:
+
+```bash
+chmod +x deploy-to-azure.sh
+./deploy-to-azure.sh
+```
+
+#### Troubleshooting
+
+If your app doesn't start, check the deployment logs:
+
+```bash
+az webapp log download \
+  --name "$APP_SERVICE_NAME" \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --log-file deployment-logs.zip
+```
+
+Common issues:
+- **Image pull failed**: Ensure the Docker image is public or provide Docker credentials
+- **Container exit code 143**: Usually a memory/timeout issue; try upgrading the SKU
+- **Port not listening**: Verify the Dockerfile exposes port 80
 
 ## Technology Stack
 
