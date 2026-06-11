@@ -8,7 +8,38 @@
   <title>Piedra, Papel o Tijera — Duelo Multijugador</title>
   
   <link rel="stylesheet" href="style.css">
-  
+
+  <!-- New Relic Browser Monitoring -->
+  <script>
+    window.NREUM || (window.NREUM = {}), __nr_require = function(e, n, t) {
+      function r(t) {
+        if (!n[t]) {
+          var i = n[t] = {exports: {}};
+          e[t][0].call(i.exports, r, i, i.exports)
+        }
+        return n[t].exports
+      }
+      for (var i = 0; i < t.length; i++) r(t[i]);
+      return r
+    }, __nr_require.O = function(e, n, t, r) {
+      for (var i = t.length, o = 0; o < i; o++) if (e[o]) return;
+      for (i = n.length, o = 0; o < i; o++) e[n[o]] = !0;
+      t[0]()
+    }, (function() {
+      'use strict';
+      var e = document, n = e.createElement("script");
+      if (!NREUM.init) {
+        NREUM.init = {
+          privacy: {cookies_enabled: true},
+          ajax: {deny_list: ["bam-cell.nr-data.net"]},
+          distributed_tracing: {enabled: true}
+        };
+        var t = e.createElement("script");
+        t.src = "https://js-agent.newrelic.com/nr-spa-1.262.2.min.js", e.head && e.head.appendChild(t)
+      }
+    }())
+  </script>
+
   <!-- PeerJS Library for WebRTC P2P communication -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </head>
