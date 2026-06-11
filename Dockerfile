@@ -1,8 +1,18 @@
 # Use lightweight Nginx alpine image
 FROM nginx:alpine
 
+# Build arguments
+ARG NEW_RELIC_LICENSE_KEY=""
+ARG NEW_RELIC_APP_NAME="Piedra-Papel-Tijera"
+
 # Copy static assets to Nginx default html serving directory
 COPY src/* /usr/share/nginx/html/
+
+# Inject New Relic License Key into HTML if provided
+RUN if [ -n "$NEW_RELIC_LICENSE_KEY" ]; then \
+  sed -i "s|NEW_RELIC_LICENSE_KEY_PLACEHOLDER|$NEW_RELIC_LICENSE_KEY|g" /usr/share/nginx/html/index.html && \
+  sed -i "s|NEW_RELIC_APP_NAME_PLACEHOLDER|$NEW_RELIC_APP_NAME|g" /usr/share/nginx/html/index.html; \
+  fi
 
 # Create health check endpoint
 RUN mkdir -p /usr/share/nginx/html/health && \

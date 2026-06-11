@@ -11,6 +11,14 @@
 
   <!-- New Relic Browser Monitoring -->
   <script>
+    window.NREUM || (window.NREUM = {});
+    window.NREUM.init = {
+      privacy: {cookies_enabled: true},
+      ajax: {deny_list: ["bam-cell.nr-data.net"]},
+      distributed_tracing: {enabled: true}
+    };
+  </script>
+  <script>
     window.NREUM || (window.NREUM = {}), __nr_require = function(e, n, t) {
       function r(t) {
         if (!n[t]) {
@@ -27,15 +35,18 @@
       t[0]()
     }, (function() {
       'use strict';
-      var e = document, n = e.createElement("script");
-      if (!NREUM.init) {
-        NREUM.init = {
-          privacy: {cookies_enabled: true},
-          ajax: {deny_list: ["bam-cell.nr-data.net"]},
-          distributed_tracing: {enabled: true}
-        };
-        var t = e.createElement("script");
-        t.src = "https://js-agent.newrelic.com/nr-spa-1.262.2.min.js", e.head && e.head.appendChild(t)
+      if ('PerformanceObserver' in window) {
+        var licenseKey = 'NEW_RELIC_LICENSE_KEY_PLACEHOLDER';
+        var appName = 'NEW_RELIC_APP_NAME_PLACEHOLDER';
+
+        if (licenseKey && licenseKey !== 'NEW_RELIC_LICENSE_KEY_PLACEHOLDER') {
+          window.NREUM.licenseKey = licenseKey;
+          window.NREUM.applicationID = appName;
+
+          var e = document, n = e.createElement("script");
+          n.src = "https://js-agent.newrelic.com/nr-spa-1.262.2.min.js";
+          e.head && e.head.appendChild(n);
+        }
       }
     }())
   </script>
