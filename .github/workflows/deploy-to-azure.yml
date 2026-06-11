@@ -1,0 +1,74 @@
+name: Deploy to Azure App Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - '.github/workflows/deploy-to-azure.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          images: ${{ secrets.DOCKER_USERNAME }}/piedra-papel-tijera:latest
+
+      - name: Health Check
+        run: |
+          echo "Waiting for app to be ready..."
+          sleep 10
+
+          APP_URL="https://${{ secrets.AZURE_APP_SERVICE_NAME }}.azurewebsites.net"
+          echo "Testing app at: $APP_URL"
+
+          for i in {1..30}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "App is healthy (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $HTTP_CODE - Retrying in 5 seconds..."
+            sleep 5
+          done
+
+          echo "App health check failed after 30 attempts"
+          exit 1
+
+      - name: Deployment Success Notification
+        if: success()
+        run: |
+          echo "Deployment successful!"
+          echo "App URL: https://${{ secrets.AZURE_APP_SERVICE_NAME }}.azurewebsites.net"
+
+      - name: Deployment Failure Notification
+        if: failure()
+        run: |
+          echo "Deployment failed!"
+          echo "Please check the logs for more information"

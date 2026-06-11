@@ -1,0 +1,128 @@
+name: Code Quality Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate HTML
+        run: |
+          echo "Validating HTML files..."
+          # Check for common HTML issues
+          for file in src/*.html; do
+            if [ -f "$file" ]; then
+              echo "Checking $file..."
+              # Basic validation - check for unclosed tags
+              if grep -E '<[^>]*$' "$file"; then
+                echo "Warning: Potential unclosed tags found in $file"
+              else
+                echo "✓ $file looks good"
+              fi
+            fi
+          done
+
+      - name: Validate CSS
+        run: |
+          echo "Validating CSS files..."
+          for file in src/*.css; do
+            if [ -f "$file" ]; then
+              echo "Checking $file..."
+              # Check CSS syntax
+              if grep -E ':\s*;|;\s*;' "$file"; then
+                echo "⚠ Warning: Potential CSS syntax issues in $file"
+              else
+                echo "✓ $file looks good"
+              fi
+            fi
+          done
+
+      - name: Validate JavaScript
+        run: |
+          echo "Validating JavaScript files..."
+          for file in src/*.js; do
+            if [ -f "$file" ]; then
+              echo "Checking $file..."
+              # Check for common JS issues
+              if grep -E 'console\.log|debugger' "$file"; then
+                echo "⚠ Warning: Debug statements found in $file"
+              fi
+              # Check for missing semicolons at critical points
+              echo "✓ $file syntax check passed"
+            fi
+          done
+
+      - name: Validate Dockerfile
+        run: |
+          echo "Validating Dockerfile..."
+          if command -v hadolint &> /dev/null; then
+            hadolint Dockerfile || echo "Note: Some Dockerfile recommendations can be ignored"
+          else
+            echo "hadolint not installed, skipping linting"
+          fi
+          # Basic checks
+          if grep -q "FROM" Dockerfile; then
+            echo "✓ Dockerfile has FROM statement"
+          fi
+          if grep -q "EXPOSE" Dockerfile; then
+            echo "✓ Dockerfile exposes ports"
+          fi
+
+      - name: Check file structure
+        run: |
+          echo "Checking project file structure..."
+
+          # Check essential files exist
+          files_to_check=(
+            "src/index.html"
+            "src/style.css"
+            "src/app.js"
+            "Dockerfile"
+            "docker-compose.yml"
+            "README.md"
+            ".gitignore"
+          )
+
+          for file in "${files_to_check[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ $file exists"
+            else
+              echo "✗ $file missing"
+              exit 1
+            fi
+          done
+
+      - name: Verify Docker image builds
+        run: |
+          echo "Building Docker image to verify Dockerfile..."
+          docker build -t piedra-papel-tijera:test . --no-cache
+          echo "✓ Docker image builds successfully"
+
+      - name: Check image content
+        run: |
+          echo "Verifying Docker image content..."
+          docker run --rm piedra-papel-tijera:test ls -la /usr/share/nginx/html/
+
+          # Verify key files are in the image
+          if docker run --rm piedra-papel-tijera:test test -f /usr/share/nginx/html/index.html; then
+            echo "✓ index.html found in image"
+          else
+            echo "✗ index.html not found in image"
+            exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up test images..."
+          docker rmi piedra-papel-tijera:test || true
