@@ -1,0 +1,25 @@
+# New Relic Terraform Configuration Example
+# Copy this file to terraform.tfvars and fill in your actual values
+
+# Your New Relic Account ID (numeric ID from account settings)
+newrelic_account_id = "1234567"
+
+# Your New Relic User API Key (NOT the license key)
+# Get this from: https://one.newrelic.com/api-keys
+newrelic_api_key = "NRAK-XXXXXXXXXXXXXXXXXX"
+
+# New Relic Region (US or EU)
+newrelic_region = "US"
+
+# Application name
+app_name = "Piedra-Papel-Tijera"
+
+# Environment
+environment = "production"
+
+# (Optional) Notification Channel ID for alerts
+# Get this after creating a notification channel in New Relic UI
+notification_channel_id = ""
+
+# Alert severity level
+alert_severity = "CRITICAL"
