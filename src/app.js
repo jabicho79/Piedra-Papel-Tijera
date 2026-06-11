@@ -1,6 +1,8 @@
 /**
  * Piedra, Papel o Tijera — Duelo Multijugador
  * Core Application Script with P2P WebRTC Sync
+ * Version: 1.0.0
+ * CI/CD Pipeline: GitHub Actions
  */
 
 // Sound FX Manager (Web Audio API Synthesizer)
